@@ -26,5 +26,6 @@ sf::VertexArray Obstacle::getVertexArray() {
 }
 
 sf::Vector2f Obstacle::getVertex(int i) {
-  return lines[2 * i + i].position;
+  if (lines.getVertexCount() < 1) return sf::Vector2f();
+  return lines[2 * i + 1].position;
 }

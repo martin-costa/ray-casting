@@ -10,6 +10,9 @@
 //main method where all the action starts
 int main();
 
+//runs before main program starts
+void launch();
+
 //where most of the program goes down
 void mainLoop();
 
@@ -30,6 +33,9 @@ KeyDetector keyR(sf::Keyboard::R);
 
 MouseDetector leftMouse(sf::Mouse::Left, &window);
 MouseDetector rightMouse(sf::Mouse::Right, &window);
+
+KeyDetector keyO(sf::Keyboard::O);
+KeyDetector keyP(sf::Keyboard::P);
 
 //make a scene
 Scene scene(WIDTH, HEIGHT);

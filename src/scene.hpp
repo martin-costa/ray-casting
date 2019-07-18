@@ -17,9 +17,15 @@ private:
   std::vector<Obstacle> obstacles;
   std::vector<Light> lights;
 
-  sf::VertexArray lightRays = sf::VertexArray(sf::Lines, 0);
+  double lightIntensity;
+  double lightRadius;
+
+  std::vector<sf::VertexArray> lightRays;
 
   Obstacle* obstacleBuffer;
+
+  //get closest obstacle from light in the direction light
+  double getClosestIntersection(double t, sf::Vector2f dir, Light light);
 
 public:
   Scene(int width, int height);
@@ -47,6 +53,9 @@ public:
 
   //pass in ref. to window and draw scene there
   void drawScene(sf::RenderWindow* window);
+
+  //multiply light radius
+  void scaleRadius(double x);
 
   //reset elements in scene
   void reset();
