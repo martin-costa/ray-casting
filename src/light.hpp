@@ -9,7 +9,11 @@ public:
   //holds position
   sf::Vector2f pos;
 
-  Light();
+  Light() {
+    this->pos = sf::Vector2f(0, 0);
+  }
 
-  Light(sf::Vector2f pos);
+  Light(sf::Vector2f pos) {
+    this->pos = pos;
+  }
 };

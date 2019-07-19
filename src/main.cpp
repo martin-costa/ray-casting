@@ -32,18 +32,18 @@ int main() {
 
 void mainLoop() {
 
-  if (leftMouse.clicked()) scene.drawToBuffer(sf::Vector2f(leftMouse.pos()));
+  if (leftMouse.clicked()) scene.drawLine(sf::Vector2f(leftMouse.pos()));
   if (rightMouse.clicked()) scene.addLight(sf::Vector2f(rightMouse.pos()));
 
-  if (keyK.typed()) scene.addObstacle();
-  if (keyD.typed()) scene.closeBuffer();
+  if (keyK.typed()) scene.newLine();
+  if (keyD.typed()) scene.closeLine();
 
   if (keyR.typed()) scene.reset();
 
   if (keyO.down()) scene.scaleRadius(1.02);
   if (keyP.down()) scene.scaleRadius(0.98);
 
-  (*scene.getLight(0)).pos = sf::Vector2f(leftMouse.pos());
+  (*scene.getLight(0)).pos = sf::Vector2f(MouseDetector::pos(&window));
 
   scene.drawScene(&window);
 }
@@ -59,4 +59,5 @@ void launch() {
   std::cout << "R: reset\n\n";
   std::cout << "Left Mouse: draw obstacle\n";
   std::cout << "Right Mouse: add light\n\n";
+  std::cout << "Source code: github.com/martin-costa/ray-casting\n\n";
 }

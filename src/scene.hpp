@@ -4,17 +4,16 @@
 #include <vector> 
 #include <cmath>
 
-#include "obstacle.hpp"
 #include "light.hpp"
 
-//double PI = asin(1);
+#define PI 3.14159265359
 
 class Scene {
 private:
   int width;
   int height;
 
-  std::vector<Obstacle> obstacles;
+  sf::VertexArray lines = sf::VertexArray(sf::Lines, 0);;
   std::vector<Light> lights;
 
   double lightIntensity;
@@ -22,7 +21,7 @@ private:
 
   std::vector<sf::VertexArray> lightRays;
 
-  Obstacle* obstacleBuffer;
+  sf::Vector2f lineStart;
 
   //get closest obstacle from light in the direction light
   double getClosestIntersection(double t, sf::Vector2f dir, Light light);
@@ -30,20 +29,20 @@ private:
 public:
   Scene(int width, int height);
 
-  //gets the ith obstacle in the vector
-  Obstacle* getObstacle(int i);
+  //returns pointer to the vertex array
+  sf::VertexArray* getVertexArray();
 
   //gets the ith light in the vector
   Light* getLight(int i);
 
-  //add a new obstacle
-  void addObstacle();
-
   //draw to last obstacle in obstacles
-  void drawToBuffer(sf::Vector2f point);
+  void drawLine(sf::Vector2f point);
 
-  //make currect buffer a closed loop
-  void closeBuffer();
+  //make currect drawing a closed loop
+  void newLine();
+
+  //go onto new drawing
+  void closeLine();
 
   //add a new obstacle
   void addLight(sf::Vector2f pos);

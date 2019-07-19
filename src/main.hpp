@@ -7,6 +7,13 @@
 #include "framerate.hpp"
 #include "scene.hpp"
 
+//define width and height
+#define WIDTH 900
+#define HEIGHT 900
+
+//max FPS of the program
+#define FPS 60
+
 //main method where all the action starts
 int main();
 
@@ -16,26 +23,19 @@ void launch();
 //where most of the program goes down
 void mainLoop();
 
-//define the (max) fps the program will run at
-int FPS = 60;
-
-//define size of window and scene
-const int WIDTH = 900;
-const int HEIGHT = 600;
-
 //define the window the program will use
-sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Ray Casting", sf::Style::Close);
+sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "2D Ray Casting", sf::Style::Close);
 
 //initialise some key handlers to be used
 KeyDetector keyK(sf::Keyboard::K);
 KeyDetector keyD(sf::Keyboard::D);
 KeyDetector keyR(sf::Keyboard::R);
 
-MouseDetector leftMouse(sf::Mouse::Left, &window);
-MouseDetector rightMouse(sf::Mouse::Right, &window);
-
 KeyDetector keyO(sf::Keyboard::O);
 KeyDetector keyP(sf::Keyboard::P);
+
+MouseDetector leftMouse(sf::Mouse::Left, &window);
+MouseDetector rightMouse(sf::Mouse::Right, &window);
 
 //make a scene
 Scene scene(WIDTH, HEIGHT);

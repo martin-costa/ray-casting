@@ -1,56 +1,40 @@
 #include "scene.hpp"
 
-#include <iostream>
-
 Scene::Scene(int width, int height) {
   this->width = width;
   this->height = height;
 
-  sf::VertexArray borders = sf::VertexArray(sf::Lines, 8);
-
-  //set up borders for scene
-  borders[0].position = sf::Vector2f(0, 0);
-  borders[1].position = sf::Vector2f(0, height + 1);
-
-  borders[2].position = sf::Vector2f(0, height + 1);
-  borders[3].position = sf::Vector2f(width + 1, height + 1);
-
-  borders[4].position = sf::Vector2f(width + 1, height + 1);
-  borders[5].position = sf::Vector2f(width + 1, 0);
-
-  borders[6].position = sf::Vector2f(width + 1, 0);
-  borders[7].position = sf::Vector2f(0, 0);
-
-  obstacles.push_back(Obstacle(borders));
-
-  addObstacle();
-
-  addLight(sf::Vector2f(0, 0));
-
-  lightRadius = 700;
-  lightIntensity = 255;
+  reset();
 }
 
-Obstacle* Scene::getObstacle(int i) {
-  return &obstacles[i];
+sf::VertexArray* Scene::getVertexArray() {
+  return &lines;
 }
 
 Light* Scene::getLight(int i) {
   return &lights[i];
 }
 
-void Scene::addObstacle() {
-  obstacles.push_back(Obstacle());
-  obstacleBuffer = getObstacle(obstacles.size() - 1);
+void Scene::drawLine(sf::Vector2f point) {
+  if (lines.getVertexCount() % 2 == 0) {
+    lines.resize(lines.getVertexCount() + 1);
+    lines[lines.getVertexCount() - 1].position = point;
+    lineStart = point;
+  }
+  lines.resize(lines.getVertexCount() + 2);
+  lines[lines.getVertexCount() - 2].position = point;
+  lines[lines.getVertexCount() - 1].position = point;
 }
 
-void Scene::drawToBuffer(sf::Vector2f point) {
-  (*obstacleBuffer).addPoint(point);
+void Scene::closeLine() {
+  if (lines.getVertexCount() % 2 == 0) return;
+  lines.resize(lines.getVertexCount() + 1);
+  lines[lines.getVertexCount() - 1].position = lineStart;
 }
 
-void Scene::closeBuffer() {
-  (*obstacleBuffer).addPoint((*obstacleBuffer).getVertex(0));
-  addObstacle();
+void Scene::newLine() {
+  if (lines.getVertexCount() % 2 == 0) return;
+  lines.resize(lines.getVertexCount() - 1);
 }
 
 void Scene::addLight(sf::Vector2f pos) {
@@ -58,7 +42,6 @@ void Scene::addLight(sf::Vector2f pos) {
 }
 
 void Scene::castRays(int rayCount) {
-
   lightRays = std::vector<sf::VertexArray>(lights.size());
 
   //for each light in lights
@@ -72,7 +55,7 @@ void Scene::castRays(int rayCount) {
     //cast rays in circle
     for (int i = 0; i < rayCount; i++) {
 
-      sf::Vector2f dir = sf::Vector2f(cos(4 * asin(1) * i / rayCount + 0.001), sin(4 * asin(1) * i / rayCount + 0.001));
+      sf::Vector2f dir = sf::Vector2f(cos(2 * PI * i / rayCount + 0.001), sin(2 * PI * i / rayCount + 0.001));
       int t = getClosestIntersection(lightRadius, dir, lights[j]);
 
       int colorScale = lightIntensity*(lightRadius - t) / lightRadius;
@@ -85,21 +68,19 @@ void Scene::castRays(int rayCount) {
 
 double Scene::getClosestIntersection(double t, sf::Vector2f dir, Light light) {
 
-  for (Obstacle obstacle : obstacles) {
-    sf::VertexArray lines = obstacle.getVertexArray();
+  int lineCount = (lines.getVertexCount() / 2);
 
-    //loop over all the lines
-    for (int i = 0; i < lines.getVertexCount(); i += 2) {
+  //loop over all the lines
+  for (int i = 0; i < lineCount*2; i += 2) {
 
-      sf::Vector2f u2 = sf::Vector2f(lines[i + 1].position.x - lines[i].position.x, lines[i + 1].position.y - lines[i].position.y);
-      float t2 = (dir.x * (lines[i].position.y - light.pos.y) + dir.y * (light.pos.x - lines[i].position.x)) / (u2.x * dir.y - u2.y * dir.x);
+    sf::Vector2f u2 = sf::Vector2f(lines[i + 1].position.x - lines[i].position.x, lines[i + 1].position.y - lines[i].position.y);
+    float t2 = (dir.x * (lines[i].position.y - light.pos.y) + dir.y * (light.pos.x - lines[i].position.x)) / (u2.x * dir.y - u2.y * dir.x);
 
-      if (0 < t2 && t2 < 1) {
-        float t1 = (lines[i].position.x + u2.x * t2 - light.pos.x) / dir.x;
-        if (t1 > 0 && t1 < t) t = t1;
-      }
-
+    if (0 < t2 && t2 < 1) {
+      float t1 = (lines[i].position.x + u2.x * t2 - light.pos.x) / dir.x;
+      if (t1 > 0 && t1 < t) t = t1;
     }
+
   }
   return t;
 }
@@ -109,13 +90,9 @@ void Scene::drawScene(sf::RenderWindow* window) {
 
   for (sf::VertexArray rays : lightRays) {
     //(*window).draw(rays, sf::BlendAdd);
-
     (*window).draw(rays, sf::BlendMode::BlendMode(sf::BlendMode::SrcColor, sf::BlendMode::OneMinusSrcColor));
   }
-
-  for (Obstacle obs : obstacles) {
-    (*window).draw(obs.getVertexArray());
-  }
+  (*window).draw(lines);
 }
 
 void Scene::scaleRadius(double x) {
@@ -123,9 +100,14 @@ void Scene::scaleRadius(double x) {
 }
 
 void Scene::reset() {
-  obstacles = std::vector<Obstacle>();
-  addObstacle();
 
-  lights = std::vector<Light>();
+  //set up borders for scene
+  this->lines = sf::VertexArray(sf::Lines, 0);
+
+  //set up lights
+  this->lights = std::vector<Light>();
   addLight(sf::Vector2f(0, 0));
+
+  lightRadius = 700;
+  lightIntensity = 255;
 }
