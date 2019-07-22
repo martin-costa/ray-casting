@@ -20,6 +20,8 @@ int main() {
     mainLoop();
 
     //control the programs framerate
+
+    std::cout << "\rvertex count: " << (*scene.getVertexArray()).getVertexCount() << " ";
     framerate(FPS, true);
 
     //display the window and then clear to black
@@ -32,7 +34,12 @@ int main() {
 
 void mainLoop() {
 
-  if (leftMouse.clicked()) scene.drawLine(sf::Vector2f(leftMouse.pos()));
+  static sf::Vector2i pos = MouseDetector::pos(&window);
+  if (leftMouse.down() && pos != leftMouse.pos()) {
+    scene.drawLine(sf::Vector2f(leftMouse.pos()));
+    pos = leftMouse.pos();
+  }
+
   if (rightMouse.clicked()) scene.addLight(sf::Vector2f(rightMouse.pos()));
 
   if (keyK.typed()) scene.newLine();
@@ -40,8 +47,11 @@ void mainLoop() {
 
   if (keyR.typed()) scene.reset();
 
-  if (keyO.down()) scene.scaleRadius(1.02);
-  if (keyP.down()) scene.scaleRadius(0.98);
+  if (keyT.typed()) {
+    if ((*scene.getLight(0)).color == sf::Color::Black)
+      (*scene.getLight(0)).color = sf::Color::White;
+    else (*scene.getLight(0)).color = sf::Color::Black;
+  }
 
   (*scene.getLight(0)).pos = sf::Vector2f(MouseDetector::pos(&window));
 

@@ -20,6 +20,7 @@ void Scene::drawLine(sf::Vector2f point) {
     lines.resize(lines.getVertexCount() + 1);
     lines[lines.getVertexCount() - 1].position = point;
     lineStart = point;
+    return;
   }
   lines.resize(lines.getVertexCount() + 2);
   lines[lines.getVertexCount() - 2].position = point;
@@ -49,7 +50,7 @@ void Scene::castRays(int rayCount) {
 
     lightRays[j] = sf::VertexArray(sf::TriangleFan, rayCount + 2);
 
-    lightRays[j][0].color = sf::Color(lightIntensity, lightIntensity, lightIntensity);
+    lightRays[j][0].color = lights[j].color;
     lightRays[j][0].position = lights[j].pos;
 
     //cast rays in circle
@@ -58,8 +59,6 @@ void Scene::castRays(int rayCount) {
       sf::Vector2f dir = sf::Vector2f(cos(2 * PI * i / rayCount + 0.001), sin(2 * PI * i / rayCount + 0.001));
       int t = getClosestIntersection(lightRadius, dir, lights[j]);
 
-      int colorScale = lightIntensity*(lightRadius - t) / lightRadius;
-      lightRays[j][i + 1].color = sf::Color(colorScale, colorScale, colorScale);
       lightRays[j][i + 1].position = sf::Vector2f(dir.x * t + lights[j].pos.x, dir.y * t + lights[j].pos.y);
     }
     lightRays[j][rayCount + 1] = lightRays[j][1];
@@ -88,15 +87,19 @@ double Scene::getClosestIntersection(double t, sf::Vector2f dir, Light light) {
 void Scene::drawScene(sf::RenderWindow* window) {
   castRays(5000);
 
-  for (sf::VertexArray rays : lightRays) {
-    //(*window).draw(rays, sf::BlendAdd);
-    (*window).draw(rays, sf::BlendMode::BlendMode(sf::BlendMode::SrcColor, sf::BlendMode::OneMinusSrcColor));
-  }
-  (*window).draw(lines);
-}
+  sf::Shader shader;
+  shader.loadFromFile("shader.fs", sf::Shader::Fragment);
 
-void Scene::scaleRadius(double x) {
-  lightRadius *= x;
+  for (int i = 0; i < lights.size(); i++) {
+    sf::Vector2f pos(lights[i].pos.x, -lights[i].pos.y + 900);
+
+    shader.setUniform("pos", pos);
+    shader.setUniform("color", sf::Vector3f(lights[i].color.r,lights[i].color.g, lights[i].color.b));
+
+    (*window).draw(lightRays[i], sf::RenderStates(sf::BlendAdd, sf::Transform::Identity, NULL, &shader));
+  }
+
+  (*window).draw(lines);
 }
 
 void Scene::reset() {
@@ -107,7 +110,28 @@ void Scene::reset() {
   //set up lights
   this->lights = std::vector<Light>();
   addLight(sf::Vector2f(0, 0));
+  lights[0].color = sf::Color::Black;
+}
 
-  lightRadius = 700;
-  lightIntensity = 255;
+//methods for light________________________________________________________
+
+Light::Light() {
+  this->pos = sf::Vector2f(0, 0);
+  setColor();
+}
+
+Light::Light(sf::Vector2f pos) {
+  this->pos = pos;
+  setColor();
+}
+
+void Light::setColor() {
+  int a = rand() % 6;
+  if (a == 0) color = sf::Color(255, 70, 70); //red
+  if (a == 1) color = sf::Color(70, 255, 70); //green
+  if (a == 2) color = sf::Color(70, 70, 255); //blue
+
+  if (a == 3) color = sf::Color(255, 255, 70); //yellow
+  if (a == 4) color = sf::Color(255, 70, 255); //magenta
+  if (a == 5) color = sf::Color(70, 255, 255); //cyan
 }

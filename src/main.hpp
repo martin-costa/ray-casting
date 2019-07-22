@@ -3,7 +3,7 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 
-#include "clickdetector.hpp"
+#include "inputdetector.hpp"
 #include "framerate.hpp"
 #include "scene.hpp"
 
@@ -31,11 +31,10 @@ KeyDetector keyK(sf::Keyboard::K);
 KeyDetector keyD(sf::Keyboard::D);
 KeyDetector keyR(sf::Keyboard::R);
 
-KeyDetector keyO(sf::Keyboard::O);
-KeyDetector keyP(sf::Keyboard::P);
-
 MouseDetector leftMouse(sf::Mouse::Left, &window);
 MouseDetector rightMouse(sf::Mouse::Right, &window);
+
+KeyDetector keyT(sf::Keyboard::T);
 
 //make a scene
 Scene scene(WIDTH, HEIGHT);

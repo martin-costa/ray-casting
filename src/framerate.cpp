@@ -15,7 +15,7 @@ void framerate(int FPS, bool show) {
 
   static int counter = 0;
   if (show && counter++ > 10) { //output every 10 frames
-    std::cout << "framerate :" << 1 / (elapsed + sleeptime).asSeconds() << "\r";
+    std::cout << "framerate: " << 1 / (elapsed + sleeptime).asSeconds() << "\r";
     counter = 0;
   }
   clock.restart();

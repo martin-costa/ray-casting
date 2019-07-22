@@ -3,10 +3,26 @@
 #include <SFML/Graphics.hpp>
 #include <vector> 
 #include <cmath>
-
-#include "light.hpp"
+#include <cstdlib>
 
 #define PI 3.14159265359
+
+//light will hold the information for a light source
+class Light {
+public:
+
+  //holds position
+  sf::Vector2f pos;
+
+  //hold color
+  sf::Color color;
+
+  Light();
+
+  Light(sf::Vector2f pos);
+
+  void setColor();
+};
 
 class Scene {
 private:
@@ -16,8 +32,7 @@ private:
   sf::VertexArray lines = sf::VertexArray(sf::Lines, 0);;
   std::vector<Light> lights;
 
-  double lightIntensity;
-  double lightRadius;
+  double lightRadius = 10000;
 
   std::vector<sf::VertexArray> lightRays;
 
@@ -52,9 +67,6 @@ public:
 
   //pass in ref. to window and draw scene there
   void drawScene(sf::RenderWindow* window);
-
-  //multiply light radius
-  void scaleRadius(double x);
 
   //reset elements in scene
   void reset();
