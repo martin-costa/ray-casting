@@ -22,6 +22,7 @@ int main() {
     //control the programs framerate
 
     std::cout << "\rvertex count: " << (*scene.getVertexArray()).getVertexCount() << " ";
+
     framerate(FPS, true);
 
     //display the window and then clear to black
@@ -60,12 +61,10 @@ void mainLoop() {
 
 void launch() {
   std::cout << "Ray Casting Simulation\n\n";
-
   std::cout << "controls:\n\n";
   std::cout << "K: new obstacle\n";
   std::cout << "D: close obstacle\n";
-  std::cout << "O: increase light radius\n";
-  std::cout << "P: decrease light radius\n";
+  std::cout << "L: toggle GPU mode";
   std::cout << "R: reset\n\n";
   std::cout << "Left Mouse: draw obstacle\n";
   std::cout << "Right Mouse: add light\n\n";

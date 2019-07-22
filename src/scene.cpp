@@ -43,55 +43,24 @@ void Scene::addLight(sf::Vector2f pos) {
 }
 
 void Scene::castRays(int rayCount) {
-  lightRays = std::vector<sf::VertexArray>(lights.size());
+  static bool gpuOn = true;
+  static KeyDetector keyL(sf::Keyboard::L);
+  if (keyL.typed()) gpuOn = !gpuOn;
 
-  //for each light in lights
-  for (int j = 0; j < lights.size(); j++) {
-
-    lightRays[j] = sf::VertexArray(sf::TriangleFan, rayCount + 2);
-
-    lightRays[j][0].color = lights[j].color;
-    lightRays[j][0].position = lights[j].pos;
-
-    //cast rays in circle
-    for (int i = 0; i < rayCount; i++) {
-
-      sf::Vector2f dir = sf::Vector2f(cos(2 * PI * i / rayCount + 0.001), sin(2 * PI * i / rayCount + 0.001));
-      int t = getClosestIntersection(lightRadius, dir, lights[j]);
-
-      lightRays[j][i + 1].position = sf::Vector2f(dir.x * t + lights[j].pos.x, dir.y * t + lights[j].pos.y);
-    }
-    lightRays[j][rayCount + 1] = lightRays[j][1];
-  }
-}
-
-double Scene::getClosestIntersection(double t, sf::Vector2f dir, Light light) {
-
-  int lineCount = (lines.getVertexCount() / 2);
-
-  //loop over all the lines
-  for (int i = 0; i < lineCount*2; i += 2) {
-
-    sf::Vector2f u2 = sf::Vector2f(lines[i + 1].position.x - lines[i].position.x, lines[i + 1].position.y - lines[i].position.y);
-    float t2 = (dir.x * (lines[i].position.y - light.pos.y) + dir.y * (light.pos.x - lines[i].position.x)) / (u2.x * dir.y - u2.y * dir.x);
-
-    if (0 < t2 && t2 < 1) {
-      float t1 = (lines[i].position.x + u2.x * t2 - light.pos.x) / dir.x;
-      if (t1 > 0 && t1 < t) t = t1;
-    }
-
-  }
-  return t;
+  if(gpuOn)
+    lightRays = castRaysAccelerated(&lights, &lines, lightRadius, rayCount);
+  else
+    lightRays = castRaysUnaccelerated(&lights, &lines, lightRadius, rayCount);
 }
 
 void Scene::drawScene(sf::RenderWindow* window) {
-  castRays(5000);
+  castRays(2048); //a multiple of 1024 (ideally 4096) is suggested
 
   sf::Shader shader;
   shader.loadFromFile("shader.fs", sf::Shader::Fragment);
 
   for (int i = 0; i < lights.size(); i++) {
-    sf::Vector2f pos(lights[i].pos.x, -lights[i].pos.y + 900);
+    sf::Vector2f pos(lights[i].pos.x, -lights[i].pos.y + height);
 
     shader.setUniform("pos", pos);
     shader.setUniform("color", sf::Vector3f(lights[i].color.r,lights[i].color.g, lights[i].color.b));
@@ -111,27 +80,4 @@ void Scene::reset() {
   this->lights = std::vector<Light>();
   addLight(sf::Vector2f(0, 0));
   lights[0].color = sf::Color::Black;
-}
-
-//methods for light________________________________________________________
-
-Light::Light() {
-  this->pos = sf::Vector2f(0, 0);
-  setColor();
-}
-
-Light::Light(sf::Vector2f pos) {
-  this->pos = pos;
-  setColor();
-}
-
-void Light::setColor() {
-  int a = rand() % 6;
-  if (a == 0) color = sf::Color(255, 70, 70); //red
-  if (a == 1) color = sf::Color(70, 255, 70); //green
-  if (a == 2) color = sf::Color(70, 70, 255); //blue
-
-  if (a == 3) color = sf::Color(255, 255, 70); //yellow
-  if (a == 4) color = sf::Color(255, 70, 255); //magenta
-  if (a == 5) color = sf::Color(70, 255, 255); //cyan
 }

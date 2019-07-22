@@ -5,41 +5,29 @@
 #include <cmath>
 #include <cstdlib>
 
+#include "light.hpp"
+#include "kernel.cuh"
+
+#include "inputdetector.hpp"
+
 #define PI 3.14159265359
-
-//light will hold the information for a light source
-class Light {
-public:
-
-  //holds position
-  sf::Vector2f pos;
-
-  //hold color
-  sf::Color color;
-
-  Light();
-
-  Light(sf::Vector2f pos);
-
-  void setColor();
-};
 
 class Scene {
 private:
   int width;
   int height;
 
-  sf::VertexArray lines = sf::VertexArray(sf::Lines, 0);;
+  sf::VertexArray lines = sf::VertexArray(sf::Lines, 0);
   std::vector<Light> lights;
 
-  double lightRadius = 10000;
+  float lightRadius = 10000;
 
   std::vector<sf::VertexArray> lightRays;
 
   sf::Vector2f lineStart;
 
   //get closest obstacle from light in the direction light
-  double getClosestIntersection(double t, sf::Vector2f dir, Light light);
+  float getClosestIntersection(float t, sf::Vector2f dir, sf::Vector2f pos);
 
 public:
   Scene(int width, int height);

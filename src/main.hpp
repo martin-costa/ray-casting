@@ -8,8 +8,8 @@
 #include "scene.hpp"
 
 //define width and height
-#define WIDTH 900
-#define HEIGHT 900
+#define WIDTH 1000
+#define HEIGHT 1000
 
 //max FPS of the program
 #define FPS 60

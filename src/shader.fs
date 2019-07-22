@@ -6,7 +6,7 @@ uniform float intensity = 15.0;
 
 void main() {
 
-	float distance = length(pos - gl_FragCoord.xy)/intensity;
+  float distance = length(pos - gl_FragCoord.xy)/intensity;
 
-	gl_FragColor = vec4(color/(distance*255.0), 1.0);
+  gl_FragColor = vec4(color/(distance*255.0), 1.0);
 }
