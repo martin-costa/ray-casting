@@ -30,14 +30,14 @@ private:
   sf::Mouse::Button button;
 
   //can store window in needed
-  sf::RenderWindow *window;
+  sf::Window *window;
 
 public:
   MouseDetector(sf::Mouse::Button button);
 
-  MouseDetector(sf::RenderWindow* window);
+  MouseDetector(sf::Window* window);
 
-  MouseDetector(sf::Mouse::Button button, sf::RenderWindow* window);
+  MouseDetector(sf::Mouse::Button button, sf::Window* window);
 
   //method to update click and get if just clicked
   bool clicked();
@@ -49,5 +49,5 @@ public:
   sf::Vector2i pos();
 
   //static method to get mouse position
-  static sf::Vector2i pos(sf::RenderWindow *window);
+  static sf::Vector2i pos(sf::Window *window);
 };

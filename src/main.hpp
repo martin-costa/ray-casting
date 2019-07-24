@@ -2,14 +2,15 @@
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <SFML/OpenGL.hpp>
 
 #include "inputdetector.hpp"
 #include "framerate.hpp"
 #include "scene.hpp"
 
 //define width and height
-#define WIDTH 1000
-#define HEIGHT 1000
+#define WIDTH 900
+#define HEIGHT 900
 
 //max FPS of the program
 #define FPS 60
@@ -24,7 +25,7 @@ void launch();
 void mainLoop();
 
 //define the window the program will use
-sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "2D Ray Casting", sf::Style::Close);
+sf::Window window(sf::VideoMode(WIDTH, HEIGHT), "2D Ray Casting", sf::Style::Close);
 
 //initialise some key handlers to be used
 KeyDetector keyK(sf::Keyboard::K);
@@ -34,7 +35,10 @@ KeyDetector keyR(sf::Keyboard::R);
 MouseDetector leftMouse(sf::Mouse::Left, &window);
 MouseDetector rightMouse(sf::Mouse::Right, &window);
 
+MouseDetector middleMouse(sf::Mouse::Middle, &window);
+
 KeyDetector keyT(sf::Keyboard::T);
 
 //make a scene
+
 Scene scene(WIDTH, HEIGHT);

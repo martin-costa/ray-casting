@@ -1,22 +1,8 @@
 #include "kernel.cuh"
 
-//reduce the vector with parallel reduction
-__device__ void parrallelReduction(float* x, int size) {
-  int n = exp2(ceil(log2f(size)));
+#include <iostream>
 
-  for (int i = n; i > 0; i /= 2) {
-    parallelReductionKernel <<< getBlockCount(THREADS, n), THREADS >>> (x, n, i);
-  }
-}
-
-__global__ void parallelReductionKernel(float* x, int size, int n) {
-  int i = blockIdx.x * blockDim.x + threadIdx.x; //index
-
-  if (n + i < size)
-    x[i] = fminf(x[i], x[n + i]);
-}
-
-//reduce the vector normally
+//reduce the vector
 __device__ float reduction(float* x, int size) {
   int t = x[0];
   for (int i = 1; i < size; i++) {
@@ -63,63 +49,51 @@ __global__ void fillTvalueBlockKernel(float* TvalueBlock, float* castRays, float
 
 __host__ void callCastingKernels(float* TvalueBlock, float* lightRays, float* castRays, float* lights, float* lines, int lightCount, int rayCount, int lineCount, float lightRadius) {
 
-  dim3 threadsPerBlock1(1, 1024, 1);
+  dim3 threadsPerBlock1(4, 16, 16); //4 16 16
   dim3 numBlocks1(getBlockCount(threadsPerBlock1.x, lightCount), getBlockCount(threadsPerBlock1.y, rayCount), getBlockCount(threadsPerBlock1.z, lineCount));
 
   //call first kernel to fill the TvalueBlock
   fillTvalueBlockKernel <<< numBlocks1, threadsPerBlock1 >>> (TvalueBlock, castRays, lights, lines, lightCount, rayCount, lineCount, lightRadius);
   
-  dim3 threadsPerBlock2(1, 1024);
+  dim3 threadsPerBlock2(16, 64); //16 64
   dim3 numBlocks2(getBlockCount(threadsPerBlock2.x, lightCount), getBlockCount(threadsPerBlock2.y, rayCount));
 
   //call second kernel to get correct values
   intersectionReductionKernel <<< numBlocks2, threadsPerBlock2 >>> (TvalueBlock, lightRays, castRays, lights, lines, lightCount, rayCount, lineCount, lightRadius);
 }
 
-__host__ std::vector<sf::VertexArray> castRaysAccelerated(std::vector<Light>* lights, sf::VertexArray* lines, float lightRadius, int rayCount) {
+__host__ void castRaysAccelerated(float* lightRays, std::vector<Light>* lights, float* linesHost, int lineCount, int rayCount, float lightRadius) {
 
   //set up the 2D and 3D host arrays
   int lightCount = lights->size();
 
-  float* lightRaysHost = new float[2 * lightCount * rayCount]();
-
   float* castRaysHost = new float[rayCount * 2](); //holds directions of circular cast rays [rays][2]
   for (int i = 0; i < rayCount; i++) {
-    castRaysHost[i*2 + 0] = cos(2 * PI * i / rayCount + 0.001);
-    castRaysHost[i*2 + 1] = sin(2 * PI * i / rayCount + 0.001);
+    castRaysHost[i * 2 + 0] = cos(2 * PI * i / rayCount + 0.001);
+    castRaysHost[i * 2 + 1] = sin(2 * PI * i / rayCount + 0.001);
   }
 
   float* lightsHost = new float[lightCount * 2](); //holds positions of lights [lights][2]
   for (int i = 0; i < lightCount; i++) {
-    lightsHost[i*2 + 0] = (*lights)[i].pos.x;
-    lightsHost[i*2 + 1] = (*lights)[i].pos.y;
+    lightsHost[i * 2 + 0] = (*lights)[i].pos.x;
+    lightsHost[i * 2 + 1] = (*lights)[i].pos.y;
   }
 
-  int lineCount = lines->getVertexCount() / 2;
-
-  float* linesHost = new float[lineCount*4](); //holds positions of lines [lines][4]
-  for (int i = 0; i < lineCount; i++) {
-    linesHost[i*4 + 0] = (*lines)[i*2].position.x;
-    linesHost[i*4 + 1] = (*lines)[i*2].position.y;
-    linesHost[i*4 + 2] = (*lines)[i*2 + 1].position.x;
-    linesHost[i*4 + 3] = (*lines)[i*2 + 1].position.y;
-  }
-
-  //set up the 2D and 3D device arrays for kernels
+  //set up the device arrays for kernels
   float* lightRaysDev = 0;
-  cudaMalloc((void**)&lightRaysDev, sizeof(float) * 2 * lightCount * rayCount);
+  cudaMalloc((void**)& lightRaysDev, sizeof(float) * 2 * lightCount * rayCount);
 
   float* castRaysDev = 0;
-  cudaMalloc((void**)&castRaysDev, sizeof(float) * 2 * rayCount);
+  cudaMalloc((void**)& castRaysDev, sizeof(float) * 2 * rayCount);
 
   float* lightsDev = 0;
-  cudaMalloc((void**)&lightsDev, sizeof(float) * 2 * lightCount);
+  cudaMalloc((void**)& lightsDev, sizeof(float) * 2 * lightCount);
 
   float* linesDev = 0;
-  cudaMalloc((void**)&linesDev, sizeof(float) * 4 * lineCount);
+  cudaMalloc((void**)& linesDev, sizeof(float) * 4 * lineCount);
 
   float* TvalueBlockDev = 0; //will hold onto the t values [lights][rays][lines]
-  cudaMalloc((void**)&TvalueBlockDev, sizeof(float) * lightCount * rayCount * lineCount);
+  cudaMalloc((void**)& TvalueBlockDev, sizeof(float) * lightCount * rayCount * lineCount);
 
   //copy memory from the host to the device
   cudaMemcpy(castRaysDev, castRaysHost, sizeof(float) * 2 * rayCount, cudaMemcpyHostToDevice);
@@ -130,7 +104,16 @@ __host__ std::vector<sf::VertexArray> castRaysAccelerated(std::vector<Light>* li
   callCastingKernels(TvalueBlockDev, lightRaysDev, castRaysDev, lightsDev, linesDev, lightCount, rayCount, lineCount, lightRadius);
 
   //copy the memory back from the device where needed
-  cudaMemcpy(lightRaysHost, lightRaysDev, sizeof(float) * 2 * lightCount * rayCount, cudaMemcpyDeviceToHost);
+
+  for (int i = 0; i < lightCount; i++) {
+    lightRays[i * (rayCount + 2) * 2 + 0] = (*lights)[i].pos.x;
+    lightRays[i * (rayCount + 2) * 2 + 1] = (*lights)[i].pos.y;
+
+    cudaMemcpy(&lightRays[i * (rayCount + 2) * 2 + 2], &lightRaysDev[i * rayCount * 2], sizeof(float) * 2 * rayCount, cudaMemcpyDeviceToHost);
+
+    lightRays[i * (rayCount + 2) * 2 + (rayCount + 1) * 2 + 0] = lightRays[i * (rayCount + 2) * 2 + 1 * 2 + 0];
+    lightRays[i * (rayCount + 2) * 2 + (rayCount + 1) * 2 + 1] = lightRays[i * (rayCount + 2) * 2 + 1 * 2 + 1];
+  }
 
   //free up all the memory on the GPU
   cudaFree(TvalueBlockDev);
@@ -139,65 +122,7 @@ __host__ std::vector<sf::VertexArray> castRaysAccelerated(std::vector<Light>* li
   cudaFree(lightsDev);
   cudaFree(linesDev);
 
-  //put lights into vector of vertex arrays
-  std::vector<sf::VertexArray> lightRays = std::vector<sf::VertexArray>((*lights).size());
-
-  for (int i = 0; i < lightCount; i++) {
-    lightRays[i] = sf::VertexArray(sf::TriangleFan, rayCount + 2);
-    lightRays[i][0].position = (*lights)[i].pos;
-    for (int j = 0; j < rayCount; j++) {
-      lightRays[i][j + 1].position.x = lightRaysHost[i * rayCount * 2 + j * 2 + 0];
-      lightRays[i][j + 1].position.y = lightRaysHost[i * rayCount * 2 + j * 2 + 1];
-    }
-    lightRays[i][rayCount + 1].position = lightRays[i][1].position;
-  }
-
   //free the host memory
-  free(lightRaysHost);
   free(castRaysHost);
   free(lightsHost);
-  free(linesHost);
-
-  return lightRays;
-}
-
-__host__ std::vector<sf::VertexArray> castRaysUnaccelerated(std::vector<Light>* lights, sf::VertexArray* lines, float lightRadius, int rayCount) {
-
-  std::vector<sf::VertexArray> lightRays = std::vector<sf::VertexArray>((*lights).size());
-
-  //for each light in lights
-  for (int j = 0; j < (*lights).size(); j++) {
-
-    lightRays[j] = sf::VertexArray(sf::TriangleFan, rayCount + 2);
-    lightRays[j][0].position = (*lights)[j].pos;
-
-    //cast rays in circle
-    for (int i = 0; i < rayCount; i++) {
-
-      sf::Vector2f dir = sf::Vector2f(cos(2 * PI * i / rayCount + 0.001), sin(2 * PI * i / rayCount + 0.001));
-      int t = getClosestIntersection(lightRadius, lines, dir, (*lights)[j].pos);
-
-      lightRays[j][i + 1].position = sf::Vector2f(dir.x * t + (*lights)[j].pos.x, dir.y * t + (*lights)[j].pos.y);
-    }
-    lightRays[j][rayCount + 1] = lightRays[j][1];
-  }
-  return lightRays;
-}
-
-__host__ float getClosestIntersection(float t, sf::VertexArray* lines, sf::Vector2f dir, sf::Vector2f pos) {
-
-  int lineCount = (lines->getVertexCount() / 2);
-
-  //loop over all the lines
-  for (int i = 0; i < lineCount * 2; i += 2) {
-
-    sf::Vector2f u2 = sf::Vector2f((*lines)[i + 1].position.x - (*lines)[i].position.x, (*lines)[i + 1].position.y - (*lines)[i].position.y);
-    float t2 = (dir.x * ((*lines)[i].position.y - pos.y) + dir.y * (pos.x - (*lines)[i].position.x)) / (u2.x * dir.y - u2.y * dir.x);
-
-    if (0 < t2 && t2 < 1) {
-      float t1 = ((*lines)[i].position.x + u2.x * t2 - pos.x) / dir.x;
-      if (t1 > 0 && t1 < t) t = t1;
-    }
-  }
-  return t;
 }

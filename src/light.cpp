@@ -12,11 +12,11 @@ Light::Light(sf::Vector2f pos) {
 
 void Light::setColor() {
   int a = rand() % 6;
-  if (a == 0) color = sf::Color(255, 120, 120); //red
-  if (a == 1) color = sf::Color(120, 255, 120); //green
-  if (a == 2) color = sf::Color(120, 120, 255); //blue
+  if (a == 0) color = sf::Color(255, 160, 160); //red
+  if (a == 1) color = sf::Color(160, 255, 160); //green
+  if (a == 2) color = sf::Color(160, 160, 255); //blue
 
-  if (a == 3) color = sf::Color(255, 255, 120); //yellow
-  if (a == 4) color = sf::Color(255, 120, 255); //magenta
-  if (a == 5) color = sf::Color(120, 255, 255); //cyan
+  if (a == 3) color = sf::Color(255, 255, 160); //yellow
+  if (a == 4) color = sf::Color(255, 160, 255); //magenta
+  if (a == 5) color = sf::Color(160, 255, 255); //cyan
 }

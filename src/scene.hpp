@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/OpenGL.hpp>
+
 #include <vector> 
 #include <cmath>
 #include <cstdlib>
@@ -17,26 +19,21 @@ private:
   int width;
   int height;
 
-  sf::VertexArray lines = sf::VertexArray(sf::Lines, 0);
+  std::vector<float> lines = std::vector<float>(0); //i*4 + j
   std::vector<Light> lights;
 
-  float lightRadius = 10000;
+  float* lightRays;
 
-  std::vector<sf::VertexArray> lightRays;
+  float lightRadius = 10000;
+  int rayCount = 2048;
 
   sf::Vector2f lineStart;
 
-  //get closest obstacle from light in the direction light
-  float getClosestIntersection(float t, sf::Vector2f dir, sf::Vector2f pos);
+  sf::Shader lightShader;
+  sf::Shader lineShader;
 
 public:
   Scene(int width, int height);
-
-  //returns pointer to the vertex array
-  sf::VertexArray* getVertexArray();
-
-  //gets the ith light in the vector
-  Light* getLight(int i);
 
   //draw to last obstacle in obstacles
   void drawLine(sf::Vector2f point);
@@ -54,7 +51,23 @@ public:
   void castRays(int rayCount);
 
   //pass in ref. to window and draw scene there
-  void drawScene(sf::RenderWindow* window);
+  void drawScene(sf::Window* window);
+
+ /*
+  * setters and getters
+  */
+
+  //returns pointer to the lines
+  std::vector<float>* getLines();
+
+  //returns pointer to the lights
+  std::vector<Light>* getLights();
+
+  //get line count
+  int getLineCount() { return lines.size() / 4; }
+
+  //get light count
+  int getLightCount() { return lights.size(); }
 
   //reset elements in scene
   void reset();

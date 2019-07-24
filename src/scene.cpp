@@ -7,35 +7,42 @@ Scene::Scene(int width, int height) {
   reset();
 }
 
-sf::VertexArray* Scene::getVertexArray() {
+std::vector<float>* Scene::getLines() {
   return &lines;
 }
 
-Light* Scene::getLight(int i) {
-  return &lights[i];
+std::vector<Light>* Scene::getLights() {
+  return &lights;
 }
 
 void Scene::drawLine(sf::Vector2f point) {
-  if (lines.getVertexCount() % 2 == 0) {
-    lines.resize(lines.getVertexCount() + 1);
-    lines[lines.getVertexCount() - 1].position = point;
+  //if line incomplete
+  if (lines.size() % 4 == 0) {
+    lines.resize(lines.size() + 2);
+    lines[lines.size() - 2] = point.x;
+    lines[lines.size() - 1] = point.y;
     lineStart = point;
     return;
   }
-  lines.resize(lines.getVertexCount() + 2);
-  lines[lines.getVertexCount() - 2].position = point;
-  lines[lines.getVertexCount() - 1].position = point;
+
+  //if line complete
+  lines.resize(lines.size() + 4);
+  lines[lines.size() - 4] = point.x;
+  lines[lines.size() - 3] = point.y;
+  lines[lines.size() - 2] = point.x;
+  lines[lines.size() - 1] = point.y;
 }
 
 void Scene::closeLine() {
-  if (lines.getVertexCount() % 2 == 0) return;
-  lines.resize(lines.getVertexCount() + 1);
-  lines[lines.getVertexCount() - 1].position = lineStart;
+  if (lines.size() % 4 == 0) return;
+  lines.resize(lines.size() + 2);
+  lines[lines.size() - 2] = lineStart.x;
+  lines[lines.size() - 1] = lineStart.y;
 }
 
 void Scene::newLine() {
-  if (lines.getVertexCount() % 2 == 0) return;
-  lines.resize(lines.getVertexCount() - 1);
+  if (lines.size() % 4 == 0) return;
+  lines.resize(lines.size() - 2);
 }
 
 void Scene::addLight(sf::Vector2f pos) {
@@ -43,41 +50,40 @@ void Scene::addLight(sf::Vector2f pos) {
 }
 
 void Scene::castRays(int rayCount) {
-  static bool gpuOn = true;
-  static KeyDetector keyL(sf::Keyboard::L);
-  if (keyL.typed()) gpuOn = !gpuOn;
-
-  if(gpuOn)
-    lightRays = castRaysAccelerated(&lights, &lines, lightRadius, rayCount);
-  else
-    lightRays = castRaysUnaccelerated(&lights, &lines, lightRadius, rayCount);
+  lightRays = new float[(rayCount + 2)*lights.size()*2]();
+  castRaysAccelerated(lightRays, &lights, lines.data(), lines.size() / 4, rayCount, lightRadius);
 }
 
-void Scene::drawScene(sf::RenderWindow* window) {
-  castRays(2048); //a multiple of 1024 (ideally 4096) is suggested
+void Scene::drawScene(sf::Window* window) {
+  castRays(rayCount); //a multiple of 1024 (ideally 4096) is suggested
 
-  sf::Shader shader;
-  shader.loadFromFile("shader.fs", sf::Shader::Fragment);
+  sf::Shader::bind(&lightShader);
+
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glVertexPointer(2, GL_FLOAT, 0, lightRays);
 
   for (int i = 0; i < lights.size(); i++) {
-    sf::Vector2f pos(lights[i].pos.x, -lights[i].pos.y + height);
+    lightShader.setUniform("pos", sf::Vector2f(lights[i].pos.x, -lights[i].pos.y + height));
+    lightShader.setUniform("color", sf::Vector3f(lights[i].color.r, lights[i].color.g, lights[i].color.b));
 
-    shader.setUniform("pos", pos);
-    shader.setUniform("color", sf::Vector3f(lights[i].color.r,lights[i].color.g, lights[i].color.b));
-
-    (*window).draw(lightRays[i], sf::RenderStates(sf::BlendAdd, sf::Transform::Identity, NULL, &shader));
+    glDrawArrays(GL_TRIANGLE_FAN, i * (rayCount + 2), (rayCount + 2));
   }
 
-  (*window).draw(lines);
+  sf::Shader::bind(&lineShader);
+
+  glVertexPointer(2, GL_FLOAT, 0, lines.data());
+  glDrawArrays(GL_LINES, 0, lines.size() / 2);
+
+  glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void Scene::reset() {
 
-  //set up borders for scene
-  this->lines = sf::VertexArray(sf::Lines, 0);
+  this->lines = std::vector<float>(0);
 
   //set up lights
-  this->lights = std::vector<Light>();
-  addLight(sf::Vector2f(0, 0));
-  lights[0].color = sf::Color::Black;
+  this->lights = std::vector<Light>(0);
+
+  lightShader.loadFromFile("lightShader.fs", sf::Shader::Fragment);
+  lineShader.loadFromFile("lineShader.fs", sf::Shader::Fragment);
 }

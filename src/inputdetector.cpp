@@ -25,11 +25,11 @@ MouseDetector::MouseDetector(sf::Mouse::Button button) {
   this->button = button;
 }
 
-MouseDetector::MouseDetector(sf::RenderWindow* window) {
+MouseDetector::MouseDetector(sf::Window* window) {
   this->window = window;
 }
 
-MouseDetector::MouseDetector(sf::Mouse::Button button, sf::RenderWindow *window) {
+MouseDetector::MouseDetector(sf::Mouse::Button button, sf::Window *window) {
   this->button = button;
   this-> window = window;
 }
@@ -55,6 +55,6 @@ sf::Vector2i MouseDetector::pos() {
 }
 
 //static method to get mouse position
-sf::Vector2i MouseDetector::pos(sf::RenderWindow *window) {
+sf::Vector2i MouseDetector::pos(sf::Window *window) {
   return sf::Mouse::getPosition(*window);
 }

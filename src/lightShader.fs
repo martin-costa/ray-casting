@@ -2,7 +2,7 @@ uniform vec2 pos;
 
 uniform vec3 color = vec3(255.0, 255.0, 255.0);
 
-uniform float intensity = 15.0;
+uniform float intensity = 10.0;
 
 void main() {
 
