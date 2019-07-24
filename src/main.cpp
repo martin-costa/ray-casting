@@ -70,6 +70,7 @@ void mainLoop() {
       (*lines)[i*2] = WIDTH / 2 + v.x;
       (*lines)[i * 2 + 1] = HEIGHT / 2 + v.y;
     }
+    scene.updateLines();
   }
 
   if (middleMouse.down()) {
@@ -79,6 +80,7 @@ void mainLoop() {
       (*lines)[i * 2] += (current.x - lastPos.x);
       (*lines)[i * 2 + 1] += (current.y - lastPos.y);
     }
+    scene.updateLines();
   }
 
   lastPos = leftMouse.pos();

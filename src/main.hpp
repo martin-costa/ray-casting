@@ -6,11 +6,11 @@
 
 #include "inputdetector.hpp"
 #include "framerate.hpp"
-#include "scene.hpp"
+#include "scene.cuh"
 
 //define width and height
-#define WIDTH 900
-#define HEIGHT 900
+#define WIDTH 3000
+#define HEIGHT 1000
 
 //max FPS of the program
 #define FPS 60
