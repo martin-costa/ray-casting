@@ -9,8 +9,8 @@
 #include "scene.cuh"
 
 //define width and height
-#define WIDTH 3000
-#define HEIGHT 1000
+#define WIDTH 900
+#define HEIGHT 900
 
 //max FPS of the program
 #define FPS 60

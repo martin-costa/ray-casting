@@ -57,6 +57,7 @@ void Scene::addLight(sf::Vector2f pos) {
   lights.push_back(pos.x);
   lights.push_back(pos.y);
   lightColors.push_back(generateColor());
+  delete[] lightRays;
   lightRays = new float[(rayCount + 2) * lights.size()]();
 
   resetLights();
@@ -105,6 +106,7 @@ void Scene::reset() {
 
   this->lightColors = std::vector<sf::Color>(0);
 
+  delete[] lightRays;
   this->lightRays = new float[(rayCount + 2) * lights.size() * 2]();
 
   lightShader.loadFromFile("lightShader.fs", sf::Shader::Fragment);

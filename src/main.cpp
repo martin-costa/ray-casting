@@ -63,7 +63,7 @@ void mainLoop() {
 
   if (keyT.down()) {
     std::vector<float>* lines = scene.getLines();
-    float theta = 0.03;
+    float theta = 0.005;
     for (int i = 0; i < scene.getLineCount()*2; i++) {
       sf::Vector2f v = sf::Vector2f((*lines)[i*2] - WIDTH / 2, (*lines)[i * 2 + 1] - HEIGHT / 2);
       v = sf::Vector2f(cos(theta) * v.x - sin(theta) * v.y, sin(theta) * v.x + cos(theta) * v.y);
